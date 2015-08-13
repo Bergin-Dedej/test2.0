@@ -37,10 +37,6 @@ public class Server {
 	ArrayList<Boolean> deltaCrosses;
 	
 	private String messenger;
-	
-	public String getMessenger() {
-		return messenger;
-	}
 
 	ArrayList<ServerObject> serverObjects;
 	ArrayList<ClientObject> clientObjects;
@@ -48,7 +44,20 @@ public class Server {
 	ObjectOutputStream outStream;
 	ServerObject serverObject;
 	
+	int port = 0;
+	DatagramPacket packet = null;
+	InetAddress address = null;
+	ArrayList<InetAddress> addresses = new ArrayList<InetAddress>();
+	ArrayList<Integer> ports = new ArrayList<Integer>();
+	
 	protected DatagramSocket datagramSocket;
+	
+	Thread timeThread;
+	
+	
+	public String getMessenger() {
+		return messenger;
+	}
 	
 	public static void main(String[] args){
 		//ApplicationContext factory = new ClassPathXmlApplicationContext("spring.xml");
@@ -58,7 +67,6 @@ public class Server {
 		server.go();
 	}
 	     
-
 
 	public class ClientHandler implements Runnable {
 		ObjectInputStream inStream;
@@ -264,7 +272,7 @@ public class Server {
 					t.start();
 					if(timeSingleton){
 					try{
-						Thread timeThread = new Thread(new Time());
+						timeThread = new Thread(new Time());
 						timeThread.start();
 						timeSingleton = false;
 					}
@@ -282,18 +290,15 @@ public class Server {
 
 		public class Time implements Runnable{
 			public void run(){
-				int port = 0;
-				DatagramPacket packet = null;
-				InetAddress address = null;
-				ArrayList<InetAddress> addresses = new ArrayList<InetAddress>();
-				ArrayList<Integer> ports = new ArrayList<Integer>();
 				
+				
+				Boolean sendSingleton = true;
 				
 				while(true){
 					sleepDelay(50);
 					
 					moveEveryone();
-					fillMessenger();
+					
 					
 					
 					
@@ -309,9 +314,9 @@ public class Server {
 						port = packet.getPort();
 					
 						String received = new String(packet.getData(), 0, packet.getLength());
-						if(received.equals("newClient")) loadNewUser(packet,address,port);
+						//if(received.equals("newClient")) loadNewUser(packet,address,port);
 						
-						System.out.println(address);
+						System.out.println("The address: " + address + " The port: " + port);
 						
 						
 						if(!(addresses.contains(address) && ports.contains(port))){
@@ -321,6 +326,7 @@ public class Server {
 						
 						System.out.println(addresses);
 					
+						/*
 						byte[] buf2 = new byte[512];
 						buf2 = messenger.getBytes();
 					
@@ -331,11 +337,21 @@ public class Server {
 							datagramSocket.send(packet);
 							System.out.println("after sending");
 						}
+						*/
 					
 					}catch(Exception e){
 						
 					}
 					
+					if(sendSingleton  && ports.size() > 0){
+						try{
+							Thread sendThread = new Thread(new Send());
+							sendThread.start();
+							sendSingleton = false;
+						}catch(Exception ex){
+							//do nothing
+						}
+					}
 					
 					callTellEveryone();
 					
@@ -382,36 +398,7 @@ public class Server {
 				
 			}
 			
-			public void fillMessenger(){
-				for(int i = 0; i < usernames.size(); i++){
-					
-					if(xMoves.get(i) != 0 || yMoves.get(i) != 0 || !deltaCrosses.get(i).equals(crosses.get(i))){
-						messenger += "0" + usernames.get(i) + ",";
-						if(xMoves.get(i) != 0 || yMoves.get(i) != 0){
-							messenger += "4" + faceDowns.get(i) + ",";
-							messenger += "5" + faceUps.get(i) + ",";
-							messenger += "6" + faceLefts.get(i) + ",";
-							messenger += "7" + faceRights.get(i) + ",";
-							if(xMoves.get(i) != 0){
-								messenger += "2" + xCoordinates.get(i) + ",";
-							}
-							if(yMoves.get(i) != 0){
-								messenger += "3" + yCoordinates.get(i) + ",";
-							}
-						}	
-						
-						if(!deltaCrosses.get(i).equals(crosses.get(i))){
-							messenger += "8" + crosses.get(i) + ",";
-						}
-						
-					}
-					
-				}
-			}
 			
-			public void emptyMessenger(){
-				messenger = "";
-			}
 			
 			public void loadNewUser(DatagramPacket packet, InetAddress address, int port) throws IOException{
 				byte[] bigBuf = new byte[512];
@@ -431,6 +418,74 @@ public class Server {
 				packet = new DatagramPacket(bigBuf, bigBuf.length, address, port);
 				datagramSocket.send(packet);
 			}
+		}
+		
+		public class Send implements Runnable{
+			public Send(){
+				
+			}
+			public void run(){
+				while(true){
+					
+					fillMessenger();
+					
+					byte[] buf2 = new byte[512];
+					buf2 = messenger.getBytes();
+					
+					
+					
+					synchronized(packet){
+					for(int i=0; i<ports.size();i++){
+						System.out.println("sending to:" + addresses.get(i));
+						packet = new DatagramPacket(buf2,buf2.length, addresses.get(i), ports.get(i));
+						System.out.println("before sending");
+						try {
+							datagramSocket.send(packet);
+						} catch (IOException e) {}
+						System.out.println("after sending");
+					}
+					}
+					
+					emptyMessenger();
+					try {
+						Thread.sleep(20);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			}
+		}
+		
+		public void fillMessenger(){
+			for(int i = 0; i < usernames.size(); i++){
+				
+				if(xMoves.get(i) != 0 || yMoves.get(i) != 0 || !deltaCrosses.get(i).equals(crosses.get(i))){
+					messenger += "0" + usernames.get(i) + ",";
+					if(xMoves.get(i) != 0 || yMoves.get(i) != 0){
+						messenger += "4" + faceDowns.get(i) + ",";
+						messenger += "5" + faceUps.get(i) + ",";
+						messenger += "6" + faceLefts.get(i) + ",";
+						messenger += "7" + faceRights.get(i) + ",";
+						if(xMoves.get(i) != 0){
+							messenger += "2" + xCoordinates.get(i) + ",";
+						}
+						if(yMoves.get(i) != 0){
+							messenger += "3" + yCoordinates.get(i) + ",";
+						}
+					}	
+					
+					if(!deltaCrosses.get(i).equals(crosses.get(i))){
+						messenger += "8" + crosses.get(i) + ",";
+					}
+					
+				}
+				
+			}
+		}
+		
+		public void emptyMessenger(){
+			messenger = "";
 		}
 		
 		public void removeLoggedOutUsers(){

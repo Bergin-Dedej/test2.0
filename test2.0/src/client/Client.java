@@ -293,15 +293,18 @@ public class Client {
 						DatagramPacket packet = new DatagramPacket(buf,buf.length,address,7777);
 						//for(int i = 0; i<30;i++){
 							datagramSocket.send(packet);
+							
 						//}
 							clientString = "loaded";
 						packet = new DatagramPacket(buf2, buf2.length);
-							datagramSocket.receive(packet);
+						
+						datagramSocket.receive(packet);
+						System.out.println("The address: " + packet.getAddress() + " The port: " + packet.getPort());
 						
 						String messenger = new String(packet.getData(),0,packet.getLength());
 						
 						
-						System.out.println(messenger);
+						System.out.println("The Messenger: " + messenger);
 						
 						size = usernames.size();
 						indexOfPlayer = updateArrayLists(messenger);

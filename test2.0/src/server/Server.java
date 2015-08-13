@@ -9,6 +9,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -293,6 +294,7 @@ public class Server {
 				
 				
 				Boolean sendSingleton = true;
+
 				
 				while(true){
 					sleepDelay(50);
@@ -307,7 +309,8 @@ public class Server {
 						
 						packet = new DatagramPacket(buf,buf.length);
 						System.out.println("before receiving");
-						datagramSocket.receive(packet);
+						
+						//datagramSocket.receive(packet);
 						System.out.println("after receiving");
 						
 						address = packet.getAddress();
@@ -437,7 +440,14 @@ public class Server {
 					synchronized(packet){
 					for(int i=0; i<ports.size();i++){
 						System.out.println("sending to:" + addresses.get(i));
-						packet = new DatagramPacket(buf2,buf2.length, addresses.get(i), ports.get(i));
+						try {
+							InetAddress hardCoded = InetAddress.getByName("192.168.2.21");
+							packet = new DatagramPacket(buf2,buf2.length, hardCoded, 7778);
+						} catch (UnknownHostException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
+						
 						System.out.println("before sending");
 						try {
 							datagramSocket.send(packet);

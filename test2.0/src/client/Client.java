@@ -82,7 +82,7 @@ public class Client {
 	private void setUpNetworking() {
 
 		try {
-			datagramSocket = new DatagramSocket();
+			datagramSocket = new DatagramSocket(7778);
 
 			sock = new Socket(HOST_ADDRESS, 5000);
 			outputStream = new ObjectOutputStream(sock.getOutputStream());
@@ -292,7 +292,7 @@ public class Client {
 						InetAddress address = InetAddress.getByName(HOST_ADDRESS);
 						DatagramPacket packet = new DatagramPacket(buf,buf.length,address,7777);
 						//for(int i = 0; i<30;i++){
-							datagramSocket.send(packet);
+							//datagramSocket.send(packet);
 							
 						//}
 							clientString = "loaded";

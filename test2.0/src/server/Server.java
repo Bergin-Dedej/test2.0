@@ -441,7 +441,7 @@ public class Server {
 					for(int i=0; i<ports.size();i++){
 						System.out.println("sending to:" + addresses.get(i));
 						try {
-							InetAddress hardCoded = InetAddress.getByName("192.168.2.21");
+							InetAddress hardCoded = InetAddress.getByName("24.114.68.16");
 							packet = new DatagramPacket(buf2,buf2.length, hardCoded, 7778);
 						} catch (UnknownHostException e1) {
 							// TODO Auto-generated catch block
